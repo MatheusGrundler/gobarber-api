@@ -2,11 +2,11 @@
   {
     "name": "default",
     "type": "postgres",
-    "host": "149.28.210.205",
+    "host": "localhost",
     "port": 5432,
-    "username": "postgres",
-    "password": "#udUzep2020.",
-    "database": "gostack11",
+    "username": "",
+    "password": "",
+    "database": "",
     "entities": [
       "./src/modules/**/infra/typeorm/entities/*.ts"
     ],
@@ -18,11 +18,11 @@
     }
   },
   {
-    "name": "mongobarber",
+    "name": "",
     "type": "mongodb",
-    "host": "149.28.210.205",
+    "host": "localhost",
     "port": 27017,
-    "database": "gobarber",
+    "database": "",
     "useUnifiedTopology": true,
     "entities": [
       "./src/modules/**/infra/typeorm/schemas/*.ts"
