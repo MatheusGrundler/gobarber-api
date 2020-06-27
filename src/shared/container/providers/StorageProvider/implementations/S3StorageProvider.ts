@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import aws, { S3 } from 'aws-sdk';
 import mime from 'mime';
-import uploadConfig from '@config/upload';
+import uploadConfig from '@config/storage';
+import { AWS_S3_BUCKET } from '@shared/utils/environment';
 import AppError from '@shared/errors/AppError';
 import IStorageProvider from '../models/IStorageProvider';
 
@@ -11,32 +12,32 @@ class S3StorageProvider implements IStorageProvider {
 
   constructor() {
     this.client = new aws.S3({
-      region: 'sa-east-1',
+      region: 'us-east-1',
     });
   }
 
   public async saveFile(file: string): Promise<string> {
     const originalPath = path.resolve(uploadConfig.tmpFolder, file);
 
-    const ContentType = mime.getType(originalPath);
+    const fileContent = await fs.promises.readFile(originalPath, {
+      encoding: null,
+    });
 
-    if (!ContentType) {
-      throw new AppError('File not found');
+    const fileType = mime.getType(originalPath);
+
+    if (!fileType) {
+      throw new AppError('File does not exists');
     }
-
-    const fileContent = await fs.promises.readFile(originalPath);
 
     await this.client
       .putObject({
-        Bucket: uploadConfig.config.aws.bucket,
+        Bucket: AWS_S3_BUCKET || 'gobarber-jvictorfarias',
         Key: file,
         ACL: 'public-read',
+        ContentType: fileType,
         Body: fileContent,
-        ContentType,
       })
       .promise();
-
-    await fs.promises.unlink(originalPath);
 
     return file;
   }
@@ -44,7 +45,7 @@ class S3StorageProvider implements IStorageProvider {
   public async deleteFile(file: string): Promise<void> {
     await this.client
       .deleteObject({
-        Bucket: uploadConfig.config.aws.bucket,
+        Bucket: AWS_S3_BUCKET || 'gobarber-jvictorfarias',
         Key: file,
       })
       .promise();

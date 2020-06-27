@@ -1,0 +1,31 @@
+[
+    {
+        "name": "default",
+        "type": "postgres",
+        "host": "206.81.10.34",
+        "port": 35432,
+        "username": "wgrdigital",
+        "password": "#grWgrdigital147.",
+        "database": "gobarber",
+        "entities": [
+            "./src/modules/**/infra/typeorm/entities/*.ts"
+        ],
+        "migrations": [
+            "./src/shared/infra/typeorm/migrations/*.ts"
+        ],
+        "cli": {
+            "migrationsDir": "./src/shared/infra/typeorm/migrations/"
+        }
+    },
+    {
+        "name": "mongobarber",
+        "type": "mongodb",
+        "host": "149.28.210.205",
+        "port": 27017,
+        "database": "gobarber",
+        "useUnifiedTopology": true,
+        "entities": [
+            "./src/modules/**/infra/typeorm/schemas/*.ts"
+        ]
+    }
+]
