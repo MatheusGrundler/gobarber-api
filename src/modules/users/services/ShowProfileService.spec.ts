@@ -1,51 +1,38 @@
-import FakeUsersRepository from '@modules/users/repositories/fakes/FakeUsersRepository';
-import FakeStorageProvider from '@shared/container/providers/StorageProvider/fakes/FakeStorageProvider';
-import UpdateUserAvatarService from '@modules/users/services/UpdateUserAvatarService';
-import ShowProfileService from '@modules/users/services/ShowProfileService';
-import AppError from '@shared/errors/AppError';
+import AppError from '@shared/errors/appError';
 
-let fakeUsersRepository: FakeUsersRepository;
-let updateUserAvatarService: UpdateUserAvatarService;
-let fakeStorageProvider: FakeStorageProvider;
-let showProfileService: ShowProfileService;
+import FakeUserRepository from '../repositories/fakes/FakeUsersRepository';
+import ShowProfileService from './ShowProfileService';
 
-describe('ShowProfileService', () => {
+let fakeUsersRepository: FakeUserRepository;
+let showProfile: ShowProfileService;
+
+describe('UpdateProfile', () => {
   beforeEach(() => {
-    fakeUsersRepository = new FakeUsersRepository();
-    fakeStorageProvider = new FakeStorageProvider();
+    fakeUsersRepository = new FakeUserRepository();
 
-    updateUserAvatarService = new UpdateUserAvatarService(
-      fakeUsersRepository,
-      fakeStorageProvider,
-    );
-
-    showProfileService = new ShowProfileService(fakeUsersRepository);
+    showProfile = new ShowProfileService(fakeUsersRepository);
   });
 
-  it('should be able to show profile of a user', async () => {
+  it('should be able to show the profile', async () => {
     const user = await fakeUsersRepository.create({
       name: 'John Doe',
       email: 'johndoe@example.com',
-      password: '123123',
+      password: '123456',
     });
 
-    await updateUserAvatarService.execute({
+    const profile = await showProfile.execute({
       user_id: user.id,
-      avatarFilename: 'avatar.jpg',
     });
 
-    const userInfo = await showProfileService.execute({ user_id: user.id });
-
-    expect(userInfo).toMatchObject({
-      name: 'John Doe',
-      email: 'johndoe@example.com',
-      avatar: 'avatar.jpg',
-    });
+    expect(profile.name).toBe('John Doe');
+    expect(profile.email).toBe('johndoe@example.com');
   });
 
-  it('should not be able to show profile of a non-existing user', async () => {
-    await expect(
-      showProfileService.execute({ user_id: 'non-existing' }),
+  it('should not be able to show the profile from non-existing user', async () => {
+    expect(
+      showProfile.execute({
+        user_id: 'non-existign user id',
+      }),
     ).rejects.toBeInstanceOf(AppError);
   });
 });

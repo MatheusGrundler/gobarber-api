@@ -1,52 +1,46 @@
+// import User from '@modules/users/infra/typeorm/entities/User';
 import { injectable, inject } from 'tsyringe';
+
 import { isAfter, addHours } from 'date-fns';
 
-import IUsersRepository from '@modules/users/repositories/IUsersRepository';
-import IUserTokensRepository from '@modules/users/repositories/IUserTokensRepository';
-import IHashProvider from '@modules/users/providers/HashProvider/models/IHashProvider';
-
-import AppError from '@shared/errors/AppError';
+import AppError from '@shared/errors/appError';
+import IUsersRepository from '../repositories/IUsersRepository';
+import IUsersTokensRepository from '../repositories/IUserTokensRepostitory';
+import IHashProvider from '../providers/HashProvider/models/IHashProviders';
 
 interface IRequest {
-  password: string;
   token: string;
+  password: string;
 }
+
 @injectable()
 class ResetPasswordService {
-  private usersRepository: IUsersRepository;
-
-  private userTokensRepository: IUserTokensRepository;
-
-  private hashProvider: IHashProvider;
-
   constructor(
     @inject('UsersRepository')
-    usersRepository: IUsersRepository,
+    private usersRepository: IUsersRepository,
 
     @inject('UserTokensRepository')
-    userTokensRepository: IUserTokensRepository,
+    private userTokensRepository: IUsersTokensRepository,
 
     @inject('HashProvider')
-    hashProvider: IHashProvider,
-  ) {
-    this.usersRepository = usersRepository;
-    this.userTokensRepository = userTokensRepository;
-    this.hashProvider = hashProvider;
-  }
+    private hashProvider: IHashProvider,
+  ) {}
 
   public async execute({ token, password }: IRequest): Promise<void> {
     const userToken = await this.userTokensRepository.findByToken(token);
 
     if (!userToken) {
-      throw new AppError('User token does not exists');
+      throw new AppError('User token does not exist');
     }
+
     const user = await this.usersRepository.findById(userToken.user_id);
 
     if (!user) {
-      throw new AppError('User does not exists');
+      throw new AppError('User does not exist');
     }
 
     const tokenCreatedAt = userToken.created_at;
+
     const compareDate = addHours(tokenCreatedAt, 2);
 
     if (isAfter(Date.now(), compareDate)) {
@@ -58,5 +52,4 @@ class ResetPasswordService {
     await this.usersRepository.save(user);
   }
 }
-
 export default ResetPasswordService;

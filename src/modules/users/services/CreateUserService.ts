@@ -1,10 +1,10 @@
-import IHashProvider from '@modules/users/providers/HashProvider/models/IHashProvider';
-import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
-import IUsersRepository from '@modules/users/repositories/IUsersRepository';
-
 import User from '@modules/users/infra/typeorm/entities/User';
-import AppError from '@shared/errors/AppError';
 import { injectable, inject } from 'tsyringe';
+import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
+
+import AppError from '@shared/errors/appError';
+import IUsersRepository from '../repositories/IUsersRepository';
+import IHashProvider from '../providers/HashProvider/models/IHashProviders';
 
 interface IRequest {
   name: string;
@@ -12,39 +12,30 @@ interface IRequest {
   password: string;
 }
 @injectable()
-class CreateUserService {
-  private usersRepository: IUsersRepository;
-
-  private hashProvider: IHashProvider;
-
-  private cacheProvider: ICacheProvider;
-
+class CreatUserService {
   constructor(
     @inject('UsersRepository')
-    usersRepository: IUsersRepository,
+    private usersRepository: IUsersRepository,
 
     @inject('HashProvider')
-    hashProvider: IHashProvider,
+    private hashProvider: IHashProvider,
 
     @inject('CacheProvider')
-    cacheProvider: ICacheProvider,
-  ) {
-    this.usersRepository = usersRepository;
-    this.hashProvider = hashProvider;
-    this.cacheProvider = cacheProvider;
-  }
+    private cacheProvider: ICacheProvider,
+  ) {}
 
   public async execute({ name, email, password }: IRequest): Promise<User> {
-    if (await this.usersRepository.findByEmail(email)) {
+    const checkUserExists = await this.usersRepository.findByEmail(email);
+
+    if (checkUserExists) {
       throw new AppError('Email address already used.');
     }
-
-    const hash_password = await this.hashProvider.generateHash(password);
+    const hashedPassword = await this.hashProvider.generateHash(password);
 
     const user = await this.usersRepository.create({
       name,
       email,
-      password: hash_password,
+      password: hashedPassword,
     });
 
     await this.cacheProvider.invalidatePrefix('providers-list');
@@ -52,5 +43,4 @@ class CreateUserService {
     return user;
   }
 }
-
-export default CreateUserService;
+export default CreatUserService;

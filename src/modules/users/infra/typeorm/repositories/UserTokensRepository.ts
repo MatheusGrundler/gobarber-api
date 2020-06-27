@@ -1,7 +1,8 @@
 import { getRepository, Repository } from 'typeorm';
-import UserToken from '@modules/users/infra/typeorm/entities/UserToken';
 
-import IUserTokensRepository from '@modules/users/repositories/IUserTokensRepository';
+import IUserTokensRepository from '@modules/users/repositories/IUserTokensRepostitory';
+
+import UserToken from '../entities/UserToken';
 
 class UserTokensRepository implements IUserTokensRepository {
   private ormRepository: Repository<UserToken>;
@@ -22,9 +23,7 @@ class UserTokensRepository implements IUserTokensRepository {
     const userToken = this.ormRepository.create({
       user_id,
     });
-
     await this.ormRepository.save(userToken);
-
     return userToken;
   }
 }

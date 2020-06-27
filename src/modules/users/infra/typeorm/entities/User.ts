@@ -1,13 +1,10 @@
-import { APP_API_URL, AWS_S3_BUCKET } from '@shared/utils/environment';
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
-import storageConfig from '@config/storage';
 import { Exclude, Expose } from 'class-transformer';
 
 @Entity('users')
@@ -22,30 +19,23 @@ class User {
   email: string;
 
   @Column()
-  @Exclude()
-  password: string;
+  avatar: string;
 
   @Column()
-  avatar: string;
+  @Exclude()
+  password: string;
 
   @CreateDateColumn()
   created_at: Date;
 
-  @UpdateDateColumn()
+  @CreateDateColumn()
   updated_at: Date;
 
   @Expose({ name: 'avatar_url' })
   getAvatarUrl(): string | null {
-    if (!this.avatar) return null;
-    switch (storageConfig.driver) {
-      case 'disk':
-        return `${APP_API_URL}/files/${this.avatar}`;
-      case 's3':
-        return `https://${AWS_S3_BUCKET}.s3.amazonaws.com/${this.avatar}`;
-      default:
-        return null;
-    }
+    return this.avatar
+      ? `${process.env.app_API_URL}/files/${this.avatar}`
+      : null;
   }
 }
-
 export default User;
