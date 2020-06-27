@@ -1,13 +1,12 @@
 import { startOfHour, isBefore, getHours, format } from 'date-fns';
 import { injectable, inject } from 'tsyringe';
-import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
 
-import AppError from '@shared/errors/appError';
+import AppError from '@shared/errors/AppError';
 
 import Appointment from '@modules/appointments/infra/typeorm/entities/Appointment';
-
+import IAppointmentsRepository from '@modules/appointments/repositories/IAppointmentsRepository';
 import INotificationsRepository from '@modules/notifications/repositories/INotificationsRepository';
-import IAppointmentsRepository from '../repositories/IAppointmentsRepository';
+import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
 
 interface IRequest {
   provider_id: string;
@@ -15,17 +14,27 @@ interface IRequest {
   date: Date;
 }
 @injectable()
-class CreatAppointmentService {
+class CreateAppointmentService {
+  private appointmentsRepository: IAppointmentsRepository;
+
+  private notificationsRepository: INotificationsRepository;
+
+  private cacheProvider: ICacheProvider;
+
   constructor(
     @inject('AppointmentsRepository')
-    private appointmentsRepository: IAppointmentsRepository,
+    appointmentsRepository: IAppointmentsRepository,
 
     @inject('NotificationsRepository')
-    private notificationsRepository: INotificationsRepository,
+    notificationsRepository: INotificationsRepository,
 
     @inject('CacheProvider')
-    private cacheProvider: ICacheProvider,
-  ) {}
+    cacheProvider: ICacheProvider,
+  ) {
+    this.appointmentsRepository = appointmentsRepository;
+    this.notificationsRepository = notificationsRepository;
+    this.cacheProvider = cacheProvider;
+  }
 
   public async execute({
     provider_id,
@@ -35,17 +44,15 @@ class CreatAppointmentService {
     const appointmentDate = startOfHour(date);
 
     if (isBefore(appointmentDate, Date.now())) {
-      throw new AppError("You can't create an appointment in a past date");
+      throw new AppError("You can't book appointments in past dates");
     }
 
-    if (user_id === provider_id) {
-      throw new AppError("You can't create an appointment with youself");
+    if (provider_id === user_id) {
+      throw new AppError("You can't book appointments with yourself");
     }
 
     if (getHours(appointmentDate) < 8 || getHours(appointmentDate) > 17) {
-      throw new AppError(
-        'You can only  create an appointment between 8 am and 17 pm',
-      );
+      throw new AppError("You can't book appointments outside commercial time");
     }
 
     const findAppointmentInSameDate = await this.appointmentsRepository.findByDate(
@@ -54,29 +61,31 @@ class CreatAppointmentService {
     );
 
     if (findAppointmentInSameDate) {
-      throw new AppError('this appointment is already booked');
+      throw new AppError('This appointment is already booked');
     }
+
     const appointment = await this.appointmentsRepository.create({
       provider_id,
       user_id,
       date: appointmentDate,
     });
 
-    const dateFormated = format(appointmentDate, "dd/MM/yyyy 'às' HH:mm'h'");
+    const dateFormatted = format(appointmentDate, "dd/MM/yyyy 'às' HH:mm'h'");
 
     await this.notificationsRepository.create({
       recipient_id: provider_id,
-      content: `Novo agendamento para dia ${dateFormated} `,
+      content: `Novo agendamento para ${dateFormatted}`,
     });
 
     await this.cacheProvider.invalidate(
-      `providers-appointments:${provider_id}:${format(
+      `provider-appointments:${provider_id}:${format(
         appointmentDate,
-        'yyyy-M-d',
+        'd-M-yyyy',
       )}`,
     );
 
     return appointment;
   }
 }
-export default CreatAppointmentService;
+
+export default CreateAppointmentService;
