@@ -3,18 +3,11 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
 
 import User from '@modules/users/infra/typeorm/entities/User';
-
-/**
- * Um para um (oneToOne)
- * Um para muitos(oneToMany)
- * Muitos para muitos(manyToMany)
- */
 
 @Entity('appointments')
 class Appointment {
@@ -41,8 +34,7 @@ class Appointment {
   @CreateDateColumn()
   created_at: Date;
 
-  @UpdateDateColumn()
+  @CreateDateColumn()
   updated_at: Date;
 }
-
 export default Appointment;

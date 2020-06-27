@@ -1,31 +1,26 @@
 import ICacheProvider from '../models/ICacheProvider';
-import ICacheProviderDTO from '../dtos/ICacheProviderDTO';
 
 interface ICacheData {
   [key: string]: string;
 }
 
-class FakeCacheProvider implements ICacheProvider {
-  private cache: ICacheData;
+export default class FakeCacheProvider implements ICacheProvider {
+  private cache: ICacheData = {};
 
-  constructor() {
-    this.cache = {} as ICacheData;
-  }
-
-  public async save({ key, value }: ICacheProviderDTO): Promise<void> {
+  public async save(key: string, value: any): Promise<void> {
     this.cache[key] = JSON.stringify(value);
   }
 
   public async recover<T>(key: string): Promise<T | null> {
-    try {
-      const data = JSON.parse(this.cache[key]);
-      if (!data) {
-        return null;
-      }
-      return data as T;
-    } catch {
+    const data = this.cache[key];
+
+    if (!data) {
       return null;
     }
+
+    const parsedData = JSON.parse(data) as T;
+
+    return parsedData;
   }
 
   public async invalidate(key: string): Promise<void> {
@@ -42,5 +37,3 @@ class FakeCacheProvider implements ICacheProvider {
     });
   }
 }
-
-export default FakeCacheProvider;
