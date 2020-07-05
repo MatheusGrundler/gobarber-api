@@ -32,6 +32,11 @@ class CreatAppointmentService {
     user_id,
     date,
   }: IRequest): Promise<Appointment> {
+    console.log({
+      provider_id,
+      date,
+      user_id,
+    });
     const appointmentDate = startOfHour(date);
 
     if (isBefore(appointmentDate, Date.now())) {
